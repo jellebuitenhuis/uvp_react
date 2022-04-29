@@ -1,16 +1,26 @@
-import {Box, Button, capitalize, Select} from "@mui/material";
+import {Box, Button, capitalize, MenuItem, Select} from "@mui/material";
 import {
     DataGrid,
-    GridToolbar, useGridApiContext
+    GridToolbar,
+    GridToolbarColumnsButton,
+    GridToolbarContainer, GridToolbarDensitySelector,
+    GridToolbarExportContainer,
+    GridToolbarFilterButton,
+    useGridApiContext
 } from "@mui/x-data-grid";
 import {dataGridEditStyle} from "../styles/dataGridStyles";
 import AddIcon from '@mui/icons-material/Add';
+import _ from "lodash";
+import {usePapaParse} from "react-papaparse";
+import {exportBlob, getJson} from "../util/fileHelpers";
 
 export const displayParticipants = (participants, customToolbar, setParticipants) => {
 
     const addNewParticipant = async (newRow) => {
         // find the deelnemerid in the participants array and then update the participant
-        setParticipants([...participants, newRow])
+        let match = _.find(participants, (participant) => participant.deelnemerid === newRow.deelnemerid)
+        Object.assign(match, newRow)
+        setParticipants(participants)
     }
 
     const processParticipantRowUpdate = async (newRow) => {
@@ -155,7 +165,8 @@ export const displayParticipants = (participants, customToolbar, setParticipants
 export const displayCategories = (categories, setCategories) => {
 
     const processCategoryRowUpdate = (newRow) => {
-        setCategories(categories.map(category => category.cat_id === newRow.cat_id ? newRow : category))
+        let match = _.find(categories, (category) => category.cat_id === newRow.cat_id)
+        Object.assign(match, newRow)
         return newRow
     }
 
@@ -231,10 +242,11 @@ export const displayCategories = (categories, setCategories) => {
     </Box>
 }
 
-export const displayStartGroups = (startGroups, setStartGroups, categories) => {
+export const displayStartGroups = (startGroups, setStartGroups, categories, customToolbar) => {
 
     const processStartGroupRowUpdate = (newRow) => {
-        setStartGroups(startGroups.map(startGroup => startGroup.id === newRow.id ? newRow : startGroup))
+        let match = _.find(startGroups, (startGroup) => startGroup.id === newRow.id)
+        Object.assign(match, newRow)
         return newRow
     }
 
@@ -293,7 +305,7 @@ export const displayStartGroups = (startGroups, setStartGroups, categories) => {
             editMode={'row'}
             processRowUpdate={processStartGroupRowUpdate}
             components={{
-                Toolbar: GridToolbar,
+                Toolbar: customToolbar,
                 Footer: AddRowButton
             }}
             initialState={{
@@ -369,7 +381,8 @@ export const displayStartGroups = (startGroups, setStartGroups, categories) => {
 
 export const displayGroups = (groups, setGroups) => {
     const processGroupRowUpdate = (newRow) => {
-        setGroups(groups.map(group => group.groep_id === newRow.groep_id ? newRow : group))
+        let match = _.find(groups, (group) => group.groep_id === newRow.groep_id)
+        Object.assign(match, newRow)
         return newRow
     }
 

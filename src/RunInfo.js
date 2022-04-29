@@ -10,7 +10,7 @@ import {
     Tabs, Typography
 } from "@mui/material";
 import {useEffect, useState} from "react";
-import {CustomToolbar} from "./components/ToolbarButtons";
+import {CustomStartGroupToolbar, CustomToolbar} from "./components/ToolbarButtons";
 import {TabPanel} from "./components/TabPanel";
 import {displayCategories, displayGroups, displayParticipants, displayStartGroups} from "./components/DataGrids";
 import FileUploadIcon from '@mui/icons-material/FileUpload';
@@ -18,7 +18,14 @@ import {useTheme} from "@mui/styles";
 import PublishIcon from '@mui/icons-material/Publish';
 import RestoreIcon from '@mui/icons-material/Restore';
 import _ from "lodash";
-import {participantToSbn, sbnToCategory, sbnToGroup, sbnToParticipant, sbnToStartGroup} from "./util/sbnConverters";
+import {
+    participantToSbn,
+    sbnToCategory,
+    sbnToGroup,
+    sbnToParticipant,
+    sbnToStartGroup,
+    startGroupToSbn
+} from "./util/sbnConverters";
 import {publishStartList} from "./util/fetchHelpers";
 import {getJson} from "./util/fileHelpers";
 import {usePapaParse} from "react-papaparse";
@@ -27,31 +34,55 @@ import {createJsonTemplate, startgroepTemplate} from "./util/jsonTemplates";
 function RunInfo(props) {
 
     const {readString} = usePapaParse();
-    const [csvData, setCsvData] = useState(null);
+    const [startNumberCsvData, setStartNumberCsvData] = useState(null);
+    const [startGroupCsvData, setStartGroupCsvData] = useState(null);
 
-    const csvToJson = (data) => {
+    const startNumberCsvToJson = (data) => {
         readString(data, {
             header: true,
+            delimiter: "",
+            skipEmptyLines: true,
             complete: (results) => {
-                setCsvData(results.data);
+                setStartNumberCsvData(results.data);
+            }
+        });
+    }
+
+    const startGroupCsvToJson = (data) => {
+        readString(data, {
+            header: true,
+            delimiter: "",
+            skipEmptyLines: true,
+            complete: (results) => {
+                setStartGroupCsvData(results.data);
             }
         });
     }
 
     useEffect(() => {
-        if (csvData) {
-            console.log(csvData)
+        if(startGroupCsvData) {
+            const startGroups = []
+            for(let startGroup of startGroupCsvData) {
+                startGroups.push(startGroupToSbn(startGroup));
+            }
+            let jsonTemplate = createJsonTemplate(run, credentials)
+            jsonTemplate.runData.survivalrun.startgroepen.startgroep = startGroups
+            mergeCurrentData(jsonTemplate)
+        }
+    }, [startGroupCsvData]);
+
+    useEffect(() => {
+        if (startNumberCsvData) {
             let participants = []
-            for (let participant of csvData) {
+            for (let participant of startNumberCsvData) {
                 participant.voornaam = participant.naam
                 participants.push(participantToSbn(participant))
             }
-            console.log(participants)
             let jsonTemplate = createJsonTemplate(run, credentials)
             jsonTemplate.runData.survivalrun.deelnemers.deelnemer = participants
             mergeCurrentData(jsonTemplate)
         }
-    }, [csvData]);
+    }, [startNumberCsvData]);
 
     const {
         run,
@@ -81,6 +112,10 @@ function RunInfo(props) {
 
     const createCustomToolbar = () => {
         return CustomToolbar(participants, categories, groups, credentials, run, startGroups)
+    }
+
+    const createCustomStartGroupToolbar = () => {
+        return CustomStartGroupToolbar(participants, categories, groups, credentials, run, startGroups)
     }
 
     const mergeCurrentData = (oldData) => {
@@ -143,12 +178,12 @@ function RunInfo(props) {
         return (
             <Box>
                 {fileType === 'JSON' &&
-                    <Typography>
-                        Met de optie "Overschrijven" zal de huidige startlijst worden overschreven met de backup. Al je
-                        huidige
-                        werk
-                        gaat verloren!
-                    </Typography>
+                <Typography>
+                    Met de optie "Overschrijven" zal de huidige startlijst worden overschreven met de backup. Al je
+                    huidige
+                    werk
+                    gaat verloren!
+                </Typography>
                 }
                 <Typography>
                     Met de optie "Samenvoegen" worden de startnummers van de backup in de huidige startlijst gezet.
@@ -157,7 +192,7 @@ function RunInfo(props) {
         )
     }
 
-    const showFileDialog = (fileType, fileContent) => {
+    const showFileDialogStartNumbers = (fileType, fileContent) => {
         setDialogTitle(`${fileType}-bestand uploaden?`)
         setDialogContent(
             <Box flex={1}>
@@ -188,10 +223,37 @@ function RunInfo(props) {
                     if (fileType === 'JSON') {
                         mergeCurrentData(JSON.parse(fileContent))
                     } else if (fileType === 'CSV') {
-                        console.log('CSV')
-                        csvToJson(fileContent)
-                        // mergeCurrentData(csvToSbn(reader.result))
+                        startNumberCsvToJson(fileContent)
                     }
+                }}>
+                    Samenvoegen
+                </Button>
+            </Box>
+        )
+        setDialogOpen(true)
+    }
+
+    const showFileDialogStartGroups = (fileType, fileContent) => {
+        setDialogTitle(`${fileType}-bestand uploaden?`)
+        setDialogContent(
+            <Box flex={1}>
+                <Typography>
+                    {`Weet je zeker dat je dit ${fileType}-bestand wilt uploaden? Je huidige werk gaat verloren!`}
+                </Typography>
+                <br/>
+                {optionsExplanation(fileType)}
+            </Box>
+        )
+        setDialogActions(
+            <Box>
+                <Button onClick={() => {
+                    setDialogOpen(false)
+                }}>
+                    Annuleren
+                </Button>
+                <Button onClick={() => {
+                    setDialogOpen(false)
+                    startGroupCsvToJson(fileContent)
                 }}>
                     Samenvoegen
                 </Button>
@@ -226,16 +288,15 @@ function RunInfo(props) {
                         <input type="file" id="file" accept="text/csv, application/json" style={{display: 'none'}}
                                onChange={(e) => {
                                    const file = e.target.files[0]
-                                   console.log(e.target.files[0])
                                    // get file content
                                    const reader = new FileReader();
                                    reader.onload = (e) => {
                                        switch (file.type) {
                                            case 'text/csv':
-                                               showFileDialog('CSV', e.target.result)
+                                               showFileDialogStartNumbers('CSV', e.target.result)
                                                break;
                                            case 'application/json':
-                                               showFileDialog('JSON', e.target.result)
+                                               showFileDialogStartNumbers('JSON', e.target.result)
                                                break;
                                            default:
                                                // TODO: warn user that the file type is not supported
@@ -253,9 +314,42 @@ function RunInfo(props) {
                                                break;
                                        }
                                    };
+                                   reader.onerror = (e) => {
+                                       console.log('error', e)
+                                   };
                                    reader.readAsText(e.target.files[0]);
                                }}/>
-                        <FileUploadIcon color={theme.palette.secondary.main}/> Importeer startlijst
+                        <FileUploadIcon color={theme.palette.secondary.main}/> Importeer startnummers
+                    </Button>
+
+                    <Button component="label">
+                        <input type="file" id="file" accept="text/csv" style={{display: 'none'}}
+                               onChange={(e) => {
+                                   const file = e.target.files[0]
+                                   // get file content
+                                   const reader = new FileReader();
+                                   reader.onload = (e) => {
+                                       switch (file.type) {
+                                           case 'text/csv':
+                                               showFileDialogStartGroups('CSV', e.target.result)
+                                               break;
+                                           default:
+                                               setDialogTitle('Foute bestandstype')
+                                               setDialogContent(`Het bestandstype ${file.type} is niet ondersteund`)
+                                               setDialogActions(
+                                                   <DialogActions>
+                                                       <Button onClick={() => setDialogOpen(false)} color="primary">
+                                                           Sluiten
+                                                       </Button>
+                                                   </DialogActions>
+                                               )
+                                               setDialogOpen(true)
+                                               break;
+                                       }
+                                   };
+                                   reader.readAsText(e.target.files[0]);
+                               }}/>
+                        <FileUploadIcon color={theme.palette.secondary.main}/> Importeer startgroepen
                     </Button>
 
                     <Button
@@ -355,7 +449,7 @@ function RunInfo(props) {
                 justifyContent: 'center',
                 height: 10
             }}>
-                {groups && <h2>Startgroepen: {displayStartGroups(startGroups, setStartGroups, categories)}</h2>}
+                {groups && <h2>Startgroepen: {displayStartGroups(startGroups, setStartGroups, categories, createCustomStartGroupToolbar)}</h2>}
             </TabPanel>
             <TabPanel value={tabIndex} index={2} style={{
                 display: 'flex',

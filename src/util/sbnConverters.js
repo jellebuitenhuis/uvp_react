@@ -31,7 +31,7 @@ export const startGroupToSbn = (startGroup) => {
     startGroepJson._attributes.starttm = startGroup.starttm;
     startGroepJson._attributes.starttijd = startGroup.starttijd;
     startGroepJson._attributes.omschrijving = startGroup.omschrijving;
-    startGroepJson._attributes.id = startGroup.id;
+    startGroepJson._attributes.id = startGroup.id || Math.floor(Math.random() * 100000000 );
     return startGroepJson;
 }
 
