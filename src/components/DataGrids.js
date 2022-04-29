@@ -9,11 +9,8 @@ import AddIcon from '@mui/icons-material/Add';
 export const displayParticipants = (participants, customToolbar, setParticipants) => {
 
     const addNewParticipant = async (newRow) => {
-        const newParticipants = participants.filter(participant => participant.deelnemerid !== newRow.deelnemerid);
-        // add the new participant to the list
-        newParticipants.push(newRow);
-        // update the list
-        setParticipants(newParticipants);
+        // find the deelnemerid in the participants array and then update the participant
+        setParticipants([...participants, newRow])
     }
 
     const processParticipantRowUpdate = async (newRow) => {
@@ -42,6 +39,12 @@ export const displayParticipants = (participants, customToolbar, setParticipants
                         'groepid': false,
                         'lidnr': false,
                     }
+                },
+                sorting: {
+                    sortModel: [{
+                        colId: 'deelnemerid',
+                        sort: 'asc'
+                    }]
                 }
             }}
             autoHeight={true}
@@ -72,7 +75,7 @@ export const displayParticipants = (participants, customToolbar, setParticipants
                     headerName: 'Naam',
                     width: 200,
                     valueGetter: ({row}) => {
-                        return capitalize(`${row.voornaam} ${row.tussenvoegsel} ${row.achternaam}`);
+                        return capitalize(`${row.voornaam || ''} ${row.tussenvoegsel || ''} ${row.achternaam || ''}`);
                     },
                 },
                 {
@@ -371,7 +374,7 @@ export const displayGroups = (groups, setGroups) => {
     }
 
     return <Box sx={{
-        width: '30vw',
+        width: '40vw',
     }}>
         <DataGrid
             processRowUpdate={processGroupRowUpdate}
@@ -388,7 +391,6 @@ export const displayGroups = (groups, setGroups) => {
             }
             experimentalFeatures={{newEditingApi: true}}
             autoHeight={true}
-            autoWidth={true}
             rows={groups}
             getRowId={row => row.groep_id}
             columns={[

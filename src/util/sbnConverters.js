@@ -48,12 +48,24 @@ export const sbnToStartGroup = (sbnStartGroup) => {
 
 export const participantToSbn = (participant) => {
     let participantJson = structuredClone(deelnemerTemplate);
-    participantJson._attributes.naam = `${participant.voornaam} ${participant.tussenvoegsel} ${participant.achternaam}`;
+    participantJson._attributes.naam = `${participant.voornaam} ${participant.tussenvoegsel || ''} ${participant.achternaam || ''}`;
     participantJson._attributes.catcode = participant.catcode;
     participantJson._attributes.lidnr = participant.lidnr;
     participantJson._attributes.woonplaats = participant.woonplaats;
     participantJson._attributes.startnummer = participant.startnummer;
     participantJson._attributes.deelnemerid = participant.deelnemerid;
+    participantJson._attributes.groepid = participant.groepid;
+    participantJson._attributes.groepcode = participant.groepcode;
+    participantJson._attributes.estafettenummer = participant.estafettenummer;
+    participantJson._attributes.email = participant.email;
+    participantJson._attributes.geboortedatum = participant.geboortedatum;
+    participantJson._attributes.geslacht = participant.geslacht;
+    participantJson._attributes.inschrijfdatum = participant.inschrijfdatum;
+    participantJson._attributes.samenloopnummer = participant.samenloopnummer;
+    participantJson._attributes.shirtmaat = participant.shirtmaat;
+    participantJson._attributes.notitie = participant.notitie;
+    participantJson._attributes.startranking = participant.startranking;
+
     return participantJson;
 }
 
@@ -63,20 +75,31 @@ export const sbnToParticipant = (participant) => {
     let name = participant._attributes.naam;
     let nameParts = name.split(" ");
     if (nameParts.length === 3) {
-        participantJson.voornaam = nameParts[0];
-        participantJson.tussenvoegsel = nameParts[1];
-        participantJson.achternaam = nameParts[2];
+        participantJson.voornaam = nameParts[0] || '';
+        participantJson.tussenvoegsel = nameParts[1] || '';
+        participantJson.achternaam = nameParts[2] || '';
     } else if (nameParts.length === 2) {
-        participantJson.voornaam = nameParts[0];
-        participantJson.achternaam = nameParts[1];
+        participantJson.voornaam = nameParts[0] || '';
+        participantJson.achternaam = nameParts[1] || '';
     } else {
-        participantJson.voornaam = name;
+        participantJson.voornaam = name || '';
     }
     participantJson.catcode = participant._attributes.catcode;
     participantJson.lidnr = participant._attributes.lidnr;
     participantJson.woonplaats = participant._attributes.woonplaats;
     participantJson.startnummer = participant._attributes.startnummer;
     participantJson.deelnemerid = participant._attributes.deelnemerid;
+    participantJson.groepid = participant._attributes.groepid;
+    participantJson.groepcode = participant._attributes.groepcode;
+    participantJson.estafettenummer = participant._attributes.estafettenummer;
+    participantJson.email = participant._attributes.email;
+    participantJson.geboortedatum = participant._attributes.geboortedatum;
+    participantJson.geslacht = participant._attributes.geslacht;
+    participantJson.inschrijfdatum = participant._attributes.inschrijfdatum;
+    participantJson.samenloopnummer = participant._attributes.samenloopnummer;
+    participantJson.shirtmaat = participant._attributes.shirtmaat;
+    participantJson.notitie = participant._attributes.notitie;
+    participantJson.startranking = participant._attributes.startranking;
     return participantJson;
 }
 

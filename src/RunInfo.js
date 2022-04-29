@@ -6,11 +6,10 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Modal,
     Tab,
     Tabs, Typography
 } from "@mui/material";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {CustomToolbar} from "./components/ToolbarButtons";
 import {TabPanel} from "./components/TabPanel";
 import {displayCategories, displayGroups, displayParticipants, displayStartGroups} from "./components/DataGrids";
@@ -19,9 +18,40 @@ import {useTheme} from "@mui/styles";
 import PublishIcon from '@mui/icons-material/Publish';
 import RestoreIcon from '@mui/icons-material/Restore';
 import _ from "lodash";
-import {sbnToCategory, sbnToGroup, sbnToParticipant, sbnToStartGroup} from "./util/sbnConverters";
+import {participantToSbn, sbnToCategory, sbnToGroup, sbnToParticipant, sbnToStartGroup} from "./util/sbnConverters";
+import {publishStartList} from "./util/fetchHelpers";
+import {getJson} from "./util/fileHelpers";
+import {usePapaParse} from "react-papaparse";
+import {createJsonTemplate, startgroepTemplate} from "./util/jsonTemplates";
 
 function RunInfo(props) {
+
+    const {readString} = usePapaParse();
+    const [csvData, setCsvData] = useState(null);
+
+    const csvToJson = (data) => {
+        readString(data, {
+            header: true,
+            complete: (results) => {
+                setCsvData(results.data);
+            }
+        });
+    }
+
+    useEffect(() => {
+        if (csvData) {
+            console.log(csvData)
+            let participants = []
+            for (let participant of csvData) {
+                participant.voornaam = participant.naam
+                participants.push(participantToSbn(participant))
+            }
+            console.log(participants)
+            let jsonTemplate = createJsonTemplate(run, credentials)
+            jsonTemplate.runData.survivalrun.deelnemers.deelnemer = participants
+            mergeCurrentData(jsonTemplate)
+        }
+    }, [csvData]);
 
     const {
         run,
@@ -109,13 +139,17 @@ function RunInfo(props) {
         setStartGroups(newStartGroups)
     }
 
-    const optionsExplanation = () => {
+    const optionsExplanation = (fileType) => {
         return (
-            <Box><Typography>
-                Met de optie "Overschrijven" zal de huidige startlijst worden overschreven met de backup. Al je huidige
-                werk
-                gaat verloren!
-            </Typography>
+            <Box>
+                {fileType === 'JSON' &&
+                    <Typography>
+                        Met de optie "Overschrijven" zal de huidige startlijst worden overschreven met de backup. Al je
+                        huidige
+                        werk
+                        gaat verloren!
+                    </Typography>
+                }
                 <Typography>
                     Met de optie "Samenvoegen" worden de startnummers van de backup in de huidige startlijst gezet.
                 </Typography>
@@ -131,7 +165,7 @@ function RunInfo(props) {
                     {`Weet je zeker dat je dit ${fileType}-bestand wilt uploaden? Je huidige werk gaat verloren!`}
                 </Typography>
                 <br/>
-                {optionsExplanation()}
+                {optionsExplanation(fileType)}
             </Box>
         )
         setDialogActions(
@@ -141,24 +175,22 @@ function RunInfo(props) {
                 }}>
                     Annuleren
                 </Button>
+                {fileType === 'JSON' &&
                 <Button onClick={() => {
                     setDialogOpen(false)
-                    if (fileType === 'JSON') {
-                        overwriteCurrentData(JSON.parse(fileContent))
-                    } else if (fileType === 'CSV') {
-                        console.log('CSV')
-                        // overwriteCurrentData(csvToSbn(reader.result))
-                    }
+                    overwriteCurrentData(JSON.parse(fileContent))
                 }}>
                     Overschrijven
                 </Button>
+                }
                 <Button onClick={() => {
                     setDialogOpen(false)
                     if (fileType === 'JSON') {
                         mergeCurrentData(JSON.parse(fileContent))
                     } else if (fileType === 'CSV') {
                         console.log('CSV')
-                        // mergeCurrentData(jsonToSbn(reader.result))
+                        csvToJson(fileContent)
+                        // mergeCurrentData(csvToSbn(reader.result))
                     }
                 }}>
                     Samenvoegen
@@ -239,6 +271,10 @@ function RunInfo(props) {
                                         Annuleren
                                     </Button>
                                     <Button onClick={() => {
+                                        const startList = getJson(participants, credentials, categories, groups, run, startGroups);
+                                        publishStartList(credentials, startList).then((data) => {
+                                            console.log(data)
+                                        })
                                         setDialogOpen(false)
                                     }}>
                                         Publiceren
@@ -261,7 +297,7 @@ function RunInfo(props) {
                                         startlijst herstellen van de vorige keer dat je deze app gebruikte.
                                     </Typography>
                                     <br/>
-                                    {optionsExplanation()}
+                                    {optionsExplanation('JSON')}
                                 </Box>
                             )
                             setDialogActions(
