@@ -1,4 +1,4 @@
-const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://vast-wave-51541.herokuapp.com';
+const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://uvp-express.onrender.com';
 const apiKey = 'ingDLMRuGe9UKHRNjs7cYckS2yul4lc6';
 
 export const fetchRest = async (request, setData, credentials, setError) => {
