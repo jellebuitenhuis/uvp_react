@@ -1,6 +1,9 @@
 import {Box, Typography} from "@mui/material";
+import TabPanelProps from "../types/TabPanelProps";
 
-export function TabPanel(props) {
+
+
+export function TabPanel(props: TabPanelProps) {
     const {children, value, index, ...other} = props;
 
     return (

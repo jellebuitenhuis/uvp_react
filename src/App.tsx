@@ -1,91 +1,61 @@
 import './App.css';
-import {useEffect, useState} from "react";
+import React, { useEffect, useState} from "react";
 import RunInfo from "./RunInfo";
 import {CssBaseline, ThemeProvider} from "@mui/material";
-import {theme} from "./styles/theme";
+import {theme} from "./styles/theme"
 import {getJson} from "./util/fileHelpers";
 import {fetchRest} from "./util/fetchHelpers";
+import _ from "lodash";
+import CredentialsType from "./types/CredentialsType";
+import RunType, {CategoryType, GroupType, ParticipantType, StartGroupType} from "./types/JsonTypes";
 
 function App() {
-    const [credentials, setCredentials] = useState({
-        username: '',
-        password: ''
-    });
-    const [run, setRun] = useState([{
+    const defaultRunInfo = {
         'naam': '',
         'run_id': '',
         'rundatum': '',
         'rundatumlaat': '',
         'versie': '',
-    }]);
-    const [categories, setCategories] = useState([]);
-    const [groups, setGroups] = useState([]);
-    const [participants, setParticipants] = useState([]);
-    const [startGroups, setStartGroups] = useState([]);
-    const [error, setError] = useState('');
-    const [ping, setPing] = useState();
-
-    const pingRpc = () => {
-        // const parseString = require('xml2js').parseString();
-
-        // console.log(formData)
-
-
-//     fetch(baseUrl + '/xmlrpc_server', {
-//       method: 'POST',
-//       headers: myHeaders,
-//       mode: 'cors',
-//       body: JSON.stringify(
-//         `<?xml version="1.0"?>
-// <methodCall>
-//     <methodName>sbn_uitslagen_ping_ws</methodName>
-//     <params>
-//         <param>
-//             <value><string>username</string></value>
-//         </param>
-//         <param>
-//             <value><string>password</string></value>
-//         </param>
-//         <param>
-//             <value><string>2022</string></value>
-//         </param>
-//     </params>
-// </methodCall>`
-//       )
-//     })
-//       .then(response => response.text())
-//       .then(data => {
-//         console.log(data);
-//       })
-//       .catch(error => console.error('Error:', error));
     };
 
+    // use credentialsType
+    const [credentials, setCredentials] = useState<CredentialsType>({
+        username: '',
+        password: ''
+    });
+    const [run, setRun] = useState<RunType>(defaultRunInfo);
+    const [categories, setCategories] = useState<CategoryType[]>([]);
+    const [groups, setGroups] = useState<GroupType[]>([]);
+    const [participants, setParticipants] = useState<ParticipantType[]>([]);
+    const [startGroups, setStartGroups] = useState<StartGroupType[]>([]);
+    const [error, setError] = useState('');
+
     const getRun = () => {
-        fetchRest('run', setRun, credentials, setError);
+        void fetchRest('run', setRun, credentials, setError);
     };
 
     const getCategories = () => {
-        fetchRest('categorie', setCategories, credentials, setError)
+        void fetchRest('categorie', setCategories, credentials, setError)
     }
 
     const getGroups = () => {
-        fetchRest('groep', setGroups, credentials, setError)
+        void fetchRest('groep', setGroups, credentials, setError)
     }
 
     const getParticipants = () => {
-        fetchRest('deelnemers_per_wedstrijd', setParticipants, credentials, setError);
+        void fetchRest('deelnemers_per_wedstrijd', setParticipants, credentials, setError);
     }
 
     const getPing = async () => {
-        return await fetchRest('ping', setPing, credentials, setError);
+        return await fetchRest('ping', () => {/* do nothing */
+        }, credentials, setError) as { error?: string};
     }
 
-
-    const login = async (event) => {
+    const login = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setCredentials({
-            username: event.target.elements.username.value,
-            password: event.target.elements.password.value
+            username: (event.currentTarget.elements.namedItem('username') as HTMLInputElement)?.value ,
+            password: (event.currentTarget.elements.namedItem('password') as HTMLInputElement)?.value
         });
     };
 
@@ -93,7 +63,7 @@ function App() {
     useEffect(() => {
         if (credentials.username && credentials.password) {
             //https://www.uvponline.nl/uvponlineConnector/api/ping
-            getPing().then((data) => {
+            void getPing().then((data) => {
                 if (!data.error) {
                     getRun();
                     getCategories();
@@ -122,11 +92,6 @@ function App() {
     }
 
     // if data changed store it on local storage
-    // useEffect(() => {
-    //     const json = getJson(participants, credentials, categories, groups, run, startGroups)
-    //     localStorage.setItem('data', json);
-    // }, [participants, credentials, categories, groups, run, startGroups]);
-
     window.addEventListener("beforeunload", (e) => {
         const json = getJson(participants, credentials, categories, groups, run, startGroups)
         localStorage.setItem('data', json);
@@ -138,9 +103,8 @@ function App() {
             <CssBaseline/>
             <div className="App">
                 <header className="App-header">
-                    {!credentials.username || !credentials.password || error ?
-                        loginForm() :
-                        <RunInfo run={run}
+                    {(credentials.username && credentials.password) && !error && (!_.isEqual(run, defaultRunInfo)) ?
+                        <RunInfo run={run ?? defaultRunInfo}
                                  participants={participants}
                                  groups={groups}
                                  categories={categories}
@@ -151,6 +115,7 @@ function App() {
                                  startGroups={startGroups}
                                  setStartGroups={setStartGroups}
                         />
+                        : loginForm()
                     }
                     {error ? <div>{error}</div> : null}
                 </header>

@@ -2,9 +2,16 @@ import {
     createJsonTemplate,
 } from "./jsonTemplates";
 import {categoryToSbn, groupToSbn, participantToSbn, startGroupToSbn} from "./sbnConverters";
+import RunType, {CategoryType, GroupType, ParticipantType, StartGroupType} from "../types/JsonTypes";
+import CredentialsType from "../types/CredentialsType";
 
-export const getJson = (participants, credentials, categories, groups, run, startGroups) => {
-    let startListJson = structuredClone(createJsonTemplate(run, credentials));
+export const getJson = (participants: ParticipantType[],
+                        credentials: CredentialsType,
+                        categories: CategoryType[],
+                        groups: GroupType[],
+                        run: RunType,
+                        startGroups: StartGroupType[]) => {
+    const startListJson = structuredClone(createJsonTemplate(run, credentials));
     startListJson.params = [
         credentials.username,
         credentials.password,
@@ -36,7 +43,7 @@ export const getJson = (participants, credentials, categories, groups, run, star
     return JSON.stringify(startListJson, null, 4);
 };
 
-export const exportBlob = (blob, filename) => {
+export const exportBlob = (blob: Blob, filename: string) => {
     // Save the blob in a json file
     const url = URL.createObjectURL(blob);
 

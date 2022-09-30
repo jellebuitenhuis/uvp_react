@@ -9,12 +9,11 @@ import {
     Tab,
     Tabs, Typography
 } from "@mui/material";
-import {useEffect, useState} from "react";
+import React, {ReactFragment, useEffect, useState} from "react";
 import {CustomToolbar} from "./components/ToolbarButtons";
 import {TabPanel} from "./components/TabPanel";
 import {displayCategories, displayGroups, displayParticipants, displayStartGroups} from "./components/DataGrids";
 import FileUploadIcon from '@mui/icons-material/FileUpload';
-import {useTheme} from "@mui/styles";
 import PublishIcon from '@mui/icons-material/Publish';
 import RestoreIcon from '@mui/icons-material/Restore';
 import _ from "lodash";
@@ -22,17 +21,24 @@ import {participantToSbn, sbnToCategory, sbnToGroup, sbnToParticipant, sbnToStar
 import {publishStartList} from "./util/fetchHelpers";
 import {getJson} from "./util/fileHelpers";
 import {usePapaParse} from "react-papaparse";
-import {createJsonTemplate, startgroepTemplate} from "./util/jsonTemplates";
+import {createJsonTemplate} from "./util/jsonTemplates";
+import RunInfoPropsType from "./types/RunInfoPropsType";
+import {ParseResult} from "papaparse";
+import {CategoryType, GroupType, ParticipantType, StartGroupType} from "./types/JsonTypes";
+import SbnType, {SbnParticipant} from "./types/SbnTypes";
+import {ImportFileType} from "./types/FileTypes";
+import {useTheme} from "@mui/styles";
 
-function RunInfo(props) {
+function RunInfo(props: RunInfoPropsType) {
 
     const {readString} = usePapaParse();
-    const [csvData, setCsvData] = useState(null);
+    const [csvData, setCsvData] = useState<ParticipantType[]>();
 
-    const csvToJson = (data) => {
+    const csvToJson = (data: string) => {
         readString(data, {
+            worker: true,
             header: true,
-            complete: (results) => {
+            complete: (results: ParseResult<ParticipantType>) => {
                 setCsvData(results.data);
             }
         });
@@ -41,13 +47,13 @@ function RunInfo(props) {
     useEffect(() => {
         if (csvData) {
             console.log(csvData)
-            let participants = []
-            for (let participant of csvData) {
-                participant.voornaam = participant.naam
+            const participants: SbnParticipant[] = []
+            for (const participant of csvData) {
+                participant.voornaam = participant.naam as string;
                 participants.push(participantToSbn(participant))
             }
             console.log(participants)
-            let jsonTemplate = createJsonTemplate(run, credentials)
+            const jsonTemplate = createJsonTemplate(run, credentials)
             jsonTemplate.runData.survivalrun.deelnemers.deelnemer = participants
             mergeCurrentData(jsonTemplate)
         }
@@ -67,45 +73,43 @@ function RunInfo(props) {
     } = props;
 
     const [dialogTitle, setDialogTitle] = useState("Title");
-    const [dialogContent, setDialogContent] = useState("Content");
+    const [dialogContent, setDialogContent] = useState<ReactFragment>();
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [dialogActions, setDialogActions] = useState(null);
+    const [dialogActions, setDialogActions] = useState<ReactFragment>();
 
     const [tabIndex, setTabIndex] = useState(0);
 
-    const handleChange = (event, newValue) => {
+    const handleChange = (_: React.SyntheticEvent, newValue: number) => {
         setTabIndex(newValue);
     };
-
-    const theme = useTheme();
 
     const createCustomToolbar = () => {
         return CustomToolbar(participants, categories, groups, credentials, run, startGroups)
     }
 
-    const mergeCurrentData = (oldData) => {
-        let newCategories = []
+    const mergeCurrentData = (oldData: SbnType) => {
+        let newCategories: CategoryType[] = []
         for (const category of oldData.runData.survivalrun.cats.cat) {
             newCategories.push(sbnToCategory(category))
         }
         newCategories = _.unionBy(newCategories, categories, 'cat_id')
         setCategories(newCategories)
 
-        let newGroups = []
+        let newGroups: GroupType[] = []
         for (const group of oldData.runData.survivalrun.groepnamen.groepnaam) {
             newGroups.push(sbnToGroup(group))
         }
         newGroups = _.unionBy(newGroups, groups, 'groep_id')
         setGroups(newGroups)
 
-        let newParticipants = []
+        let newParticipants: ParticipantType[] = []
         for (const participant of oldData.runData.survivalrun.deelnemers.deelnemer) {
             newParticipants.push(sbnToParticipant(participant))
         }
         newParticipants = _.unionBy(newParticipants, participants, 'deelnemerid')
         setParticipants(newParticipants)
 
-        let newStartGroups = []
+        let newStartGroups: StartGroupType[] = []
         for (const startGroup of oldData.runData.survivalrun.startgroepen.startgroep) {
             newStartGroups.push(sbnToStartGroup(startGroup))
         }
@@ -113,56 +117,58 @@ function RunInfo(props) {
         setStartGroups(newStartGroups)
     }
 
-    const overwriteCurrentData = (data) => {
-        let newCategories = []
+    const overwriteCurrentData = (data: SbnType) => {
+        const newCategories: CategoryType[] = []
         for (const category of data.runData.survivalrun.cats.cat) {
             newCategories.push(sbnToCategory(category))
         }
         setCategories(newCategories)
 
-        let newParticipants = []
+        const newParticipants = []
         for (const participant of data.runData.survivalrun.deelnemers.deelnemer) {
             newParticipants.push(sbnToParticipant(participant))
         }
         setParticipants(newParticipants)
 
-        let newGroups = []
+        const newGroups = []
         for (const group of data.runData.survivalrun.groepnamen.groepnaam) {
             newGroups.push(sbnToGroup(group))
         }
         setGroups(newGroups)
 
-        let newStartGroups = []
+        const newStartGroups = []
         for (const startGroup of data.runData.survivalrun.startgroepen.startgroep) {
             newStartGroups.push(sbnToStartGroup(startGroup))
         }
         setStartGroups(newStartGroups)
     }
 
-    const optionsExplanation = (fileType) => {
+    const optionsExplanation = (fileType: ImportFileType) => {
         return (
             <Box>
                 {fileType === 'JSON' &&
                     <Typography>
-                        Met de optie "Overschrijven" zal de huidige startlijst worden overschreven met de backup. Al je
+                        Met de optie &quot;Overschrijven&quot; zal de huidige startlijst worden overschreven met de
+                        backup. Al je
                         huidige
                         werk
                         gaat verloren!
                     </Typography>
                 }
                 <Typography>
-                    Met de optie "Samenvoegen" worden de startnummers van de backup in de huidige startlijst gezet.
+                    Met de optie &quot;Samenvoegen&quot; worden de startnummers van de backup in de huidige startlijst
+                    gezet.
                 </Typography>
             </Box>
         )
     }
 
-    const showFileDialog = (fileType, fileContent) => {
-        setDialogTitle(`${fileType}-bestand uploaden?`)
+    const showFileDialog = (fileType: ImportFileType, fileContent: string) => {
+        setDialogTitle(`${fileType.toString()}-bestand uploaden?`)
         setDialogContent(
             <Box flex={1}>
                 <Typography>
-                    {`Weet je zeker dat je dit ${fileType}-bestand wilt uploaden? Je huidige werk gaat verloren!`}
+                    {`Weet je zeker dat je dit ${fileType.toString()}-bestand wilt uploaden? Je huidige werk gaat verloren!`}
                 </Typography>
                 <br/>
                 {optionsExplanation(fileType)}
@@ -176,17 +182,19 @@ function RunInfo(props) {
                     Annuleren
                 </Button>
                 {fileType === 'JSON' &&
-                <Button onClick={() => {
-                    setDialogOpen(false)
-                    overwriteCurrentData(JSON.parse(fileContent))
-                }}>
-                    Overschrijven
-                </Button>
+                    <Button onClick={() => {
+                        setDialogOpen(false)
+                        const sbnData = JSON.parse(fileContent) as SbnType
+                        overwriteCurrentData(sbnData)
+                    }}>
+                        Overschrijven
+                    </Button>
                 }
                 <Button onClick={() => {
                     setDialogOpen(false)
                     if (fileType === 'JSON') {
-                        mergeCurrentData(JSON.parse(fileContent))
+                        const sbnData = JSON.parse(fileContent) as SbnType
+                        mergeCurrentData(sbnData)
                     } else if (fileType === 'CSV') {
                         console.log('CSV')
                         csvToJson(fileContent)
@@ -206,7 +214,7 @@ function RunInfo(props) {
                 value={tabIndex}
                 onChange={handleChange}
                 variant={"scrollable"}
-                scrollButtons={"on"}
+                scrollButtons={true}
             >
                 <Tab label="Categorieën"/>
                 <Tab label="Startgroepen"/>
@@ -218,44 +226,50 @@ function RunInfo(props) {
                 flexDirection: 'column',
                 alignItems: 'center',
             }}>
-                {run[0].naam && <h2>Naam: {run[0].naam}</h2>}
-                {run[0].rundatum && <h3>Datum: {run[0].rundatum}</h3>}
-                {run[0].rundatumlaat && <h3>Datum laat: {run[0].rundatumlaat}</h3>}
+                {run.naam && <h2>Naam: {run.naam}</h2>}
+                {run.rundatum && <h3>Datum: {run.rundatum}</h3>}
+                {run.rundatumlaat && <h3>Datum laat: {run.rundatumlaat}</h3>}
                 <Box>
                     <Button component="label">
                         <input type="file" id="file" accept="text/csv, application/json" style={{display: 'none'}}
                                onChange={(e) => {
-                                   const file = e.target.files[0]
-                                   console.log(e.target.files[0])
-                                   // get file content
-                                   const reader = new FileReader();
-                                   reader.onload = (e) => {
-                                       switch (file.type) {
-                                           case 'text/csv':
-                                               showFileDialog('CSV', e.target.result)
-                                               break;
-                                           case 'application/json':
-                                               showFileDialog('JSON', e.target.result)
-                                               break;
-                                           default:
-                                               // TODO: warn user that the file type is not supported
-                                               console.log('default')
-                                               setDialogTitle('Foute bestandstype')
-                                               setDialogContent(`Het bestandstype ${file.type} is niet ondersteund`)
-                                               setDialogActions(
-                                                   <DialogActions>
-                                                       <Button onClick={() => setDialogOpen(false)} color="primary">
-                                                           Sluiten
-                                                       </Button>
-                                                   </DialogActions>
-                                               )
-                                               setDialogOpen(true)
-                                               break;
-                                       }
-                                   };
-                                   reader.readAsText(e.target.files[0]);
+                                   if (e.target.files && e.target.files.length > 0) {
+                                       const file = e.target.files[0]
+                                       console.log(e.target.files[0])
+                                       // get file content
+                                       const reader = new FileReader();
+                                       reader.onload = (e) => {
+                                           if (e.target && e.target.result) {
+                                              const fileContent = e.target.result.toString()
+                                               switch (file.type) {
+                                                   case 'text/csv':
+                                                       showFileDialog('CSV', fileContent)
+                                                       break;
+                                                   case 'application/json':
+                                                       showFileDialog('JSON', fileContent)
+                                                       break;
+                                                   default:
+                                                       // TODO: warn user that the file type is not supported
+                                                       console.log('default')
+                                                       setDialogTitle('Foute bestandstype')
+                                                       setDialogContent(`Het bestandstype ${file.type} is niet ondersteund`)
+                                                       setDialogActions(
+                                                           <DialogActions>
+                                                               <Button onClick={() => setDialogOpen(false)}
+                                                                       color="primary">
+                                                                   Sluiten
+                                                               </Button>
+                                                           </DialogActions>
+                                                       )
+                                                       setDialogOpen(true)
+                                                       break;
+                                               }
+                                           }
+                                       };
+                                       reader.readAsText(e.target.files[0]);
+                                   }
                                }}/>
-                        <FileUploadIcon color={theme.palette.secondary.main}/> Importeer startlijst
+                        <FileUploadIcon color={'primary'}/> Importeer startlijst
                     </Button>
 
                     <Button
@@ -272,7 +286,7 @@ function RunInfo(props) {
                                     </Button>
                                     <Button onClick={() => {
                                         const startList = getJson(participants, credentials, categories, groups, run, startGroups);
-                                        publishStartList(credentials, startList).then((data) => {
+                                        void publishStartList(credentials, startList).then((data) => {
                                             console.log(data)
                                         })
                                         setDialogOpen(false)
@@ -284,7 +298,7 @@ function RunInfo(props) {
                             setDialogOpen(true)
                         }}
                     >
-                        <PublishIcon color={theme.palette.secondary.main}/> Publiceer startlijst
+                        <PublishIcon color={'primary'}/> Publiceer startlijst
                     </Button>
 
                     <Button
@@ -309,15 +323,21 @@ function RunInfo(props) {
                                     </Button>
                                     <Button onClick={() => {
                                         setDialogOpen(false)
-                                        const data = JSON.parse(window.localStorage.getItem('data'));
-                                        overwriteCurrentData(data)
+                                        const localData = window.localStorage.getItem('data')
+                                        if (localData) {
+                                            const data = JSON.parse(localData) as SbnType;
+                                            overwriteCurrentData(data)
+                                        }
                                     }}>
                                         Overschrijven
                                     </Button>
                                     <Button onClick={() => {
                                         setDialogOpen(false)
-                                        const data = JSON.parse(window.localStorage.getItem('data'));
-                                        mergeCurrentData(data)
+                                        const localData = window.localStorage.getItem('data')
+                                        if (localData) {
+                                            const data = JSON.parse(localData) as SbnType;
+                                            mergeCurrentData(data)
+                                        }
                                     }}>
                                         Samenvoegen
                                     </Button>
@@ -326,7 +346,7 @@ function RunInfo(props) {
                             setDialogOpen(true)
                         }}
                     >
-                        <RestoreIcon color={theme.palette.secondary.main}/> Herstel locale backup
+                        <RestoreIcon color={'primary'}/> Herstel locale backup
                     </Button>
                 </Box>
             </Box>
@@ -334,7 +354,8 @@ function RunInfo(props) {
             <Dialog open={dialogOpen} fullWidth={true} maxWidth={"lg"}>
                 <DialogTitle>{dialogTitle}</DialogTitle>
                 <DialogContent sx={{width: '60vw'}}>
-                    <DialogContentText style={{color: theme.palette.secondary.main}}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment */}
+                    <DialogContentText style={{color: useTheme().palette.secondary.main}}>
                         {dialogContent}
                     </DialogContentText>
                 </DialogContent>
@@ -366,7 +387,7 @@ function RunInfo(props) {
             </TabPanel>
             <TabPanel value={tabIndex} index={3}>
                 {participants &&
-                <h2>Deelnemers: {displayParticipants(participants, createCustomToolbar, setParticipants)}</h2>}
+                    <h2>Deelnemers: {displayParticipants(participants, createCustomToolbar, setParticipants)}</h2>}
             </TabPanel>
         </Box>
     )
