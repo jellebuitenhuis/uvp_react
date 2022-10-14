@@ -11,6 +11,8 @@ https://github.com/mholt/PapaParse
 License: MIT
 */
 
+/*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
+
 /**
  * @license
  * Lodash <https://lodash.com/>
@@ -20,7 +22,7 @@ License: MIT
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
 
-/** @license MUI v5.5.2
+/** @license MUI v5.10.7
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
