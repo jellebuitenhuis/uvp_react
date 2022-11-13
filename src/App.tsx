@@ -21,8 +21,8 @@ function App() {
 
     // use credentialsType
     const [credentials, setCredentials] = useState<CredentialsType>({
-        username: 'Tartaros',
-        password: 'T@rtaRos2017!'
+        username: '',
+        password: ''
     });
     const [run, setRun] = useState<RunType>(defaultRunInfo);
     const [categories, setCategories] = useState<CategoryType[]>([]);
