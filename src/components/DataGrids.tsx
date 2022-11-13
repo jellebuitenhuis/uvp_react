@@ -1,30 +1,26 @@
-import {Box, Button, capitalize, MenuItem, Select} from "@mui/material";
+import {Box, Button, capitalize, Select, SelectChangeEvent} from "@mui/material";
 import {
-    DataGrid,
-    GridToolbar,
-    GridToolbarColumnsButton,
-    GridToolbarContainer, GridToolbarDensitySelector,
-    GridToolbarExportContainer,
-    GridToolbarFilterButton,
-    useGridApiContext
+    DataGrid, GridFooter, GridFooterContainer, GridPreProcessEditCellProps, GridRenderEditCellParams, GridRowModel,
+    GridToolbar, useGridApiContext
 } from "@mui/x-data-grid";
 import {dataGridEditStyle} from "../styles/dataGridStyles";
 import AddIcon from '@mui/icons-material/Add';
-import _ from "lodash";
-import {usePapaParse} from "react-papaparse";
-import {exportBlob, getJson} from "../util/fileHelpers";
+import {CategoryType, GroupType, ParticipantType, StartGroupType} from "../types/JsonTypes";
+import * as _ from "lodash";
 
-export const displayParticipants = (participants, customToolbar, setParticipants) => {
+export const displayParticipants = (participants: ParticipantType[], customToolbar: () => JSX.Element, setParticipants: (participants: ParticipantType[]) => void) => {
 
-    const addNewParticipant = async (newRow) => {
+    const addNewParticipant = (newRow: ParticipantType) => {
         // find the deelnemerid in the participants array and then update the participant
-        let match = _.find(participants, (participant) => participant.deelnemerid === newRow.deelnemerid)
-        Object.assign(match, newRow)
+        const match = _.find(participants, (participant) => participant.deelnemerid === newRow.deelnemerid)
+        if (match) {
+            Object.assign(match, newRow)
+        }
         setParticipants(participants)
     }
 
-    const processParticipantRowUpdate = async (newRow) => {
-        addNewParticipant(newRow)
+    const processParticipantRowUpdate = (newRow: GridRowModel) => {
+        void addNewParticipant(newRow as ParticipantType)
         return newRow
     }
 
@@ -52,7 +48,7 @@ export const displayParticipants = (participants, customToolbar, setParticipants
                 },
                 sorting: {
                     sortModel: [{
-                        colId: 'deelnemerid',
+                        field: 'deelnemerid',
                         sort: 'asc'
                     }]
                 }
@@ -63,7 +59,7 @@ export const displayParticipants = (participants, customToolbar, setParticipants
                 flexGrow: 1,
                 ...dataGridEditStyle
             }}
-            getRowId={(row) => row.deelnemerid}
+            getRowId={(row) => row.deelnemerid as string}
             rows={participants}
             columns={[
                 {
@@ -85,7 +81,9 @@ export const displayParticipants = (participants, customToolbar, setParticipants
                     headerName: 'Naam',
                     width: 200,
                     valueGetter: ({row}) => {
-                        return capitalize(`${row.voornaam || ''} ${row.tussenvoegsel || ''} ${row.achternaam || ''}`);
+                        const rowAsParticipant = row as ParticipantType
+
+                        return capitalize(`${rowAsParticipant.voornaam || ''} ${rowAsParticipant.tussenvoegsel || ''} ${rowAsParticipant.achternaam || ''}`);
                     },
                 },
                 {
@@ -133,9 +131,10 @@ export const displayParticipants = (participants, customToolbar, setParticipants
                     headerName: 'Startranking',
                     width: 120,
                     renderCell: ({row}) => {
+                        const rowAsParticipant = row as ParticipantType
                         return (
                             <div>
-                                {row.startranking / 10000}
+                                {Number.parseInt(rowAsParticipant.startranking) / 10000}
                             </div>
                         );
                     }
@@ -157,16 +156,17 @@ export const displayParticipants = (participants, customToolbar, setParticipants
                     minWidth: 300,
                 }
 
-            ]}
-        />
+            ]}></DataGrid>
     </Box>
 }
 
-export const displayCategories = (categories, setCategories) => {
+export const displayCategories = (categories: CategoryType[]) => {
 
-    const processCategoryRowUpdate = (newRow) => {
-        let match = _.find(categories, (category) => category.cat_id === newRow.cat_id)
-        Object.assign(match, newRow)
+    const processCategoryRowUpdate = (newRow: GridRowModel) => {
+        const match = _.find(categories, (category) => category.cat_id === newRow.cat_id)
+        if (match) {
+            Object.assign(match, newRow)
+        }
         return newRow
     }
 
@@ -191,7 +191,10 @@ export const displayCategories = (categories, setCategories) => {
             experimentalFeatures={{newEditingApi: true}}
             autoHeight={true}
             rows={categories}
-            getRowId={(row) => row.cat_id}
+            getRowId={(row) => {
+                const rowAsCategory = row as CategoryType
+                return rowAsCategory.cat_id
+            }}
             columns={[
                 {
                     field: 'cat_code',
@@ -233,7 +236,7 @@ export const displayCategories = (categories, setCategories) => {
                     editable: true,
                     preProcessEditCellProps: (params) => {
                         // check if params.props.tabIndex is in the format hh:mm
-                        const isInvalidTime = !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(params.props.value);
+                        const isInvalidTime = !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(params.props.value as string);
                         return {...params.props, error: isInvalidTime};
                     }
                 }
@@ -242,11 +245,13 @@ export const displayCategories = (categories, setCategories) => {
     </Box>
 }
 
-export const displayStartGroups = (startGroups, setStartGroups, categories, customToolbar) => {
+export const displayStartGroups = (startGroups: StartGroupType[], setStartGroups: (startGroups: StartGroupType[]) => void, categories: CategoryType[], customToolbar: () => JSX.Element) => {
 
-    const processStartGroupRowUpdate = (newRow) => {
-        let match = _.find(startGroups, (startGroup) => startGroup.id === newRow.id)
-        Object.assign(match, newRow)
+    const processStartGroupRowUpdate = (newRow: GridRowModel) => {
+        const match = _.find(startGroups, (startGroup) => startGroup.id === newRow.id)
+        if (match) {
+            Object.assign(match, newRow)
+        }
         return newRow
     }
 
@@ -255,28 +260,41 @@ export const displayStartGroups = (startGroups, setStartGroups, categories, cust
             <Box>
                 <Button
                     onClick={() => {
-                        setStartGroups(startGroups.concat([{
-                            startvan: 0,
-                            starttm: 0,
-                            starttijd: '00:00',
-                            omschrijving: '',
-                            catcode: '',
-                            id: Math.floor(Math.random() * 1000000)
-                        }]))
+                        setStartGroups(startGroups.concat([
+                            {
+                                startvan: '0',
+                                starttm: '0',
+                                starttijd: '00:00',
+                                omschrijving: '',
+                                catcode: '',
+                                id: _.uniqueId()
+                            }
+                        ]))
                     }}>
-                    <AddIcon color={'#31a836'}/>Add Row
+                    <AddIcon htmlColor={'#31a836'}/>Add Row
                 </Button>
             </Box>
         )
     }
 
-    function SelectEditInputCell(props) {
-        const {id, value, field} = props;
+    const CustomFooter = () => {
+        return (<GridFooterContainer>
+                <AddRowButton/>
+                <GridFooter/>
+            </GridFooterContainer>
+        )
+    }
+
+    function SelectEditInputCell(props: GridRenderEditCellParams) {
+        const {id, field} = props;
+        const value = props.value as string;
         const apiRef = useGridApiContext();
 
-        const handleChange = async (event) => {
-            await apiRef.current.setEditCellValue({id, field, value: event.target.value});
-            apiRef.current.stopCellEditMode({id, field});
+        const handleChange = (event: SelectChangeEvent) => {
+            void (async () => {
+                await apiRef.current.setEditCellValue({id, field, value: event.target.value});
+                apiRef.current.stopCellEditMode({id, field});
+            })();
         };
 
         return (
@@ -294,7 +312,7 @@ export const displayStartGroups = (startGroups, setStartGroups, categories, cust
         );
     }
 
-    function renderSelectEditInputCell(params) {
+    function renderSelectEditInputCell(params: GridRenderEditCellParams) {
         return <SelectEditInputCell {...params} />;
     }
 
@@ -306,7 +324,7 @@ export const displayStartGroups = (startGroups, setStartGroups, categories, cust
             processRowUpdate={processStartGroupRowUpdate}
             components={{
                 Toolbar: customToolbar,
-                Footer: AddRowButton
+                Footer: CustomFooter
             }}
             initialState={{
                 pagination: {
@@ -320,9 +338,8 @@ export const displayStartGroups = (startGroups, setStartGroups, categories, cust
             }}
             experimentalFeatures={{newEditingApi: true}}
             autoHeight={true}
-            autoWidth={true}
             rows={startGroups}
-            getRowId={row => row.id}
+            getRowId={row => row.id as string}
             columns={[
                 {
                     field: 'catcode',
@@ -362,7 +379,7 @@ export const displayStartGroups = (startGroups, setStartGroups, categories, cust
                     editable: true,
                     preProcessEditCellProps: (params) => {
                         // check if params.props.tabIndex is in the format hh:mm
-                        const isInvalidTime = !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(params.props.value);
+                        const isInvalidTime = !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(params.props.value as string);
                         return {...params.props, error: isInvalidTime};
                     }
                 },
@@ -379,10 +396,12 @@ export const displayStartGroups = (startGroups, setStartGroups, categories, cust
     </Box>
 }
 
-export const displayGroups = (groups, setGroups) => {
-    const processGroupRowUpdate = (newRow) => {
-        let match = _.find(groups, (group) => group.groep_id === newRow.groep_id)
-        Object.assign(match, newRow)
+export const displayGroups = (groups: GroupType[]) => {
+    const processGroupRowUpdate = (newRow: GridRowModel) => {
+        const match = _.find(groups, (group) => group.groep_id === newRow.groep_id)
+        if (match) {
+            Object.assign(match, newRow)
+        }
         return newRow
     }
 
@@ -405,7 +424,7 @@ export const displayGroups = (groups, setGroups) => {
             experimentalFeatures={{newEditingApi: true}}
             autoHeight={true}
             rows={groups}
-            getRowId={row => row.groep_id}
+            getRowId={row => row.groep_id as string}
             columns={[
                 {
                     field: 'groep_id',
@@ -433,7 +452,7 @@ export const displayGroups = (groups, setGroups) => {
     </Box>
 };
 
-const validateNumberInput = (params) => {
-    const hasError = isNaN(params.props.value);
+const validateNumberInput = (params: GridPreProcessEditCellProps) => {
+    const hasError = isNaN(params.props.value as number);
     return {...params.props, error: hasError};
 }

@@ -1,4 +1,5 @@
 import {createTheme} from "@mui/material";
+import type {} from '@mui/x-data-grid/themeAugmentation';
 
 export const theme = createTheme({
     palette: {
@@ -8,7 +9,6 @@ export const theme = createTheme({
         secondary: {
             main: '#e9510e',
         },
-        type: 'dark',
         mode: 'dark',
         background: {
             // default: '#005a9b',
@@ -39,3 +39,37 @@ export const theme = createTheme({
         }
     }
 });
+
+declare module '@mui/styles' {
+    interface DefaultTheme {
+        palette: {
+            primary: {
+                main: string;
+            },
+            secondary: {
+                main: string;
+            },
+            mode: string;
+            text: {
+                primary: string;
+                secondary: string;
+            }
+        }
+    }
+
+    interface ThemeOptions {
+        palette: {
+            primary: {
+                main: string;
+            },
+            secondary: {
+                main: string;
+            },
+            mode: string;
+            text: {
+                primary: string;
+                secondary: string;
+            }
+        }
+    }
+}
