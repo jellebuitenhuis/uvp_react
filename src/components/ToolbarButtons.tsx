@@ -159,7 +159,7 @@ const CSVExportStartGroupMenuItem = (props: ToolbarPropsType) => {
                     type: 'text/csv;chartset=utf-8',
                 });
 
-                exportBlob(blob, `startgroepen${run.naam}.csv`);
+                exportBlob(blob, `startgroepen_${run.naam}.csv`);
 
                 // Hide the export menu after the export
                 hideMenu?.();

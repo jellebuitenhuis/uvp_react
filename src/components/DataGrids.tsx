@@ -156,7 +156,7 @@ export const displayParticipants = (participants: ParticipantType[], customToolb
                     minWidth: 300,
                 }
 
-            ]}></DataGrid>
+            ]}/>
     </Box>
 }
 
@@ -412,6 +412,14 @@ export const displayGroups = (groups: GroupType[]) => {
             processRowUpdate={processGroupRowUpdate}
             components={{
                 Toolbar: GridToolbar
+            }}
+            componentsProps={{
+                toolbar: {
+                    printOptions: { disableToolbarButton: true },
+                    csvOptions: {
+                        disableToolbarButton: true
+                    }
+                }
             }}
             initialState={{
                 pagination: {
