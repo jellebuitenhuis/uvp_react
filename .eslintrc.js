@@ -16,7 +16,8 @@ module.exports = {
     parserOptions: {
         tsconfigRootDir: __dirname,
         project: ['tsconfig.json'],
+        sourceType: "module"
     },
-    ignorePatterns: ['node_modules', 'build', 'dist', 'coverage', 'public', 'src/setupTests.js'],
+    ignorePatterns: ['node_modules', 'build', 'dist', 'coverage', 'public', 'src/setupTests.js', 'src/reportWebVitals.js'],
     root: true,
 };

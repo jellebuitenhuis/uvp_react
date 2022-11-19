@@ -35,6 +35,11 @@ export const getJson = (participants: ParticipantType[],
 
     for (const group of groups) {
         const groupJson = groupToSbn(group);
+        // find the first participant with the same group id
+        const participant = participants.find(p => p.groepid === group.groep_id);
+        if (participant) {
+            groupJson._attributes.startnummer = participant.startnummer;
+        }
         startListJson.runData.survivalrun.groepnamen.groepnaam.push(groupJson);
     }
 
