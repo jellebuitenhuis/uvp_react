@@ -310,6 +310,7 @@ function RunInfo(props: RunInfoPropsType) {
                                                const fileContent = e.target.result.toString()
                                                switch (file.type) {
                                                    case 'text/csv':
+                                                   case 'application/vnd.ms-excel':
                                                        showFileDialogStartNumbers('CSV', fileContent)
                                                        break;
                                                    case 'application/json':
@@ -350,6 +351,7 @@ function RunInfo(props: RunInfoPropsType) {
                                                const fileContent = e.target.result.toString()
                                                switch (file.type) {
                                                    case 'text/csv':
+                                                   case 'application/vnd.ms-excel':
                                                        showFileDialogStartGroups('CSV', fileContent)
                                                        break;
                                                    default:
