@@ -1,7 +1,6 @@
 {
   "name": "uvp_react",
   "version": "0.1.0",
-  "homepage": "https://jellebuitenhuis.github.io/uvp_react",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.8.2",

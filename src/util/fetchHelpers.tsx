@@ -3,7 +3,7 @@ import {Dispatch, SetStateAction} from "react";
 import RunType, {CategoryType, GroupType, ParticipantType} from "../types/JsonTypes";
 import ErrorType from "../types/ErrorType";
 
-const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://uvp-express.onrender.com';
+const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://uvpexpress.jellebuitenhuis.nl';
 const apiKey = 'ingDLMRuGe9UKHRNjs7cYckS2yul4lc6';
 
 export const fetchRest = async (request: string,
